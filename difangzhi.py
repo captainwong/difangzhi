@@ -6,19 +6,20 @@ from bs4 import BeautifulSoup
 
 
 class difangzhi:
-    def __init__(self, ch, name, baseurl):
+    def __init__(self, ch, a, name, baseurl):
         self.ch = ch
+        self.a = a
         self.name = name
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         self.baseurl = baseurl
-        self.f = open(name + ".md", "w")
+        self.f = open(name + ".md", "w", encoding='utf-8')
 
     def build_url(self, a, ch, rec = None):
         return self.baseurl + "&K=" + self.ch + "&A=" + str(a) + ("&rec="+rec if rec else '') +  "&run=" + ("13" if rec else '12')
 
     def index(self):
         try:
-            url = self.build_url(3, self.ch)
+            url = self.build_url(self.a, self.ch)
             res = requests.get(url, headers = {'user-agent' : self.user_agent})
             if res.status_code == 200:
                 text = res.content
@@ -29,9 +30,9 @@ class difangzhi:
 
     def write_chapter(self, chapter, title, data):
         if data.startswith(title):
-            self.f.write('#' * (len(chapter) + 1) + data + "\r\n")
+            self.f.write('#' * (len(chapter) + 1) + ' ' + data + "\r\n")
         else:
-            self.f.write('#' * (len(chapter) + 1) + title + "\r\n")
+            self.f.write('#' * (len(chapter) + 1) + ' ' + title + "\r\n")
             self.f.write(data + "\r\n")
         self.f.flush()
         pass
@@ -59,7 +60,7 @@ class difangzhi:
             print('请求异常({})'.format(e))
 
     def get_rec(self, href):
-        tag = 'javascript:sf(3,'
+        tag = 'javascript:sf(' + str(self.a) + ','
         index = href.find(tag)
         if index >= 0:
             i2 = href.find(',', len(tag))
@@ -81,15 +82,19 @@ class difangzhi:
                     title = tag.text.strip()
                     rec = self.get_rec(tag.attrs['href'])
                     if rec:
-                        url = self.build_url(3, aname, rec)
+                        url = self.build_url(self.a, aname, rec)
                         print(chapter, title, url)
                         self.download_chapter(chapter, title, url)
-
+                    else:
+                        print("error, find rec failed", tag.attrs['href'])
                     #return
 
 
 if __name__ == '__main__':
-    d = difangzhi('CH9', u'东明县志（1986--2005）', 'http://lib.sdsqw.cn/bin/mse.exe?')
+    #d = difangzhi('CH9', 3, u'东明县志（1986--2005）', 'http://lib.sdsqw.cn/bin/mse.exe?')
+    #d.index()
+
+    d = difangzhi('CH9', 1, u'东明县志', 'http://lib.sdsqw.cn/bin/mse.exe?')
     d.index()
 
     #d.download_chapter('1', u'魅力东明', 'http://lib.sdsqw.cn/bin/mse.exe?COLLCC=4108678863&K=CH91&A=3&rec=1&run=12')
